@@ -7,6 +7,7 @@ export const rinkeby: NetworkConfig = {
   unlockAddress: '0xd8c88be5e8eb88e38e6ff5ce186d764676012b0b',
   serializerAddress: '0x1bd356194d97297F77e081fFFAB97b57297E93e4',
   multisig: '0x04e855D82c079222d6bDBc041F6202d5A0137267',
+  uniswapOracle: '0x068B14E2FfA003004ca1c38e09fC62ABBCcE7722',
   id: 4,
   name: 'Rinkeby',
   blockTime: 8000,
