@@ -38,6 +38,7 @@ export interface NetworkConfig {
   unlockAddress?: string
   serializerAddress?: string
   multisig?: string
+  uniswapOracle?: string
   subgraphURI?: string
   ethersProvider?: ethers.providers.Provider
   explorer?: {
