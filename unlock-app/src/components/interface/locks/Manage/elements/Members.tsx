@@ -9,6 +9,7 @@ import { MemberCard } from './MemberCard'
 import { paginate } from '~/utils/pagination'
 import { PaginationBar } from './PaginationBar'
 import { useState } from 'react'
+import { locksmithService } from '~/services/locksmithService'
 
 interface MembersProps {
   lockAddress: string
@@ -48,20 +49,17 @@ export const Members = ({
   const { account } = useAuth()
   const walletService = useWalletService()
   const web3Service = useWeb3Service()
-  const storageService = useStorageService()
   const [page, setPage] = useState(1)
 
   const getMembers = async () => {
-    await storageService.loginPrompt({
-      walletService,
-      address: account!,
-      chainId: network,
-    })
-    return storageService.getKeys({
-      lockAddress,
+    const result = await locksmithService.keys(
       network,
-      filters,
-    })
+      lockAddress,
+      filters.query,
+      filters.filterKey,
+      filters.expiration
+    )
+    return result.data
   }
 
   const getLockVersion = async (): Promise<number> => {
