@@ -33,7 +33,6 @@ const LoginPrompt = ({
 }: LoginPromptProps) => {
   const [walletToShow, setWalletToShow] = useState('')
   const [isDownloadWallet, setIsDownloadWallet] = useState(false)
-
   const { authenticateWithProvider } = useAuthenticate({
     injectedProvider,
   })

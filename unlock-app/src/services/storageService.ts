@@ -8,7 +8,7 @@ import { EventEmitter } from 'events'
 import { isExpired } from 'react-jwt'
 import { generateNonce } from 'siwe'
 import { Lock } from '../unlockTypes'
-import fetch, { RequestInit } from 'node-fetch'
+import fetch from 'cross-fetch'
 import { APP_NAME } from '~/hooks/useAppStorage'
 
 // The goal of the success and failure objects is to act as a registry of events
@@ -77,15 +77,13 @@ export class StorageService extends EventEmitter {
 
   async login(message: string, signature: string) {
     const response = await this.locksmith.login({
-      message,
-      signature,
+      loginRequest: {
+        message,
+        signature,
+      },
     })
 
-    if (response.status !== 200) {
-      throw new Error('login failed')
-    }
-
-    const { refreshToken, accessToken } = response.data
+    const { refreshToken, accessToken } = response
 
     this.refreshToken = refreshToken
     this.#accessToken = accessToken
@@ -93,12 +91,8 @@ export class StorageService extends EventEmitter {
 
   async signOut() {
     try {
-      const endpoint = `${this.host}/v2/auth/revoke`
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'refresh-token': this.refreshToken!,
-        },
+      this.locksmith.revoke({
+        refreshToken: this.refreshToken,
       })
       this.#accessToken = null
       this.refreshToken = null
@@ -158,11 +152,12 @@ export class StorageService extends EventEmitter {
       throw new Error('User is not authenticated')
     }
     if (!this.#accessToken || isExpired(this.#accessToken)) {
-      const { data, status } = await this.locksmith.refreshToken(refreshToken)
-      if (status !== 200) {
-        throw new Error('Could not get access token')
-      }
-      this.#accessToken = data.accessToken
+      const response = await this.locksmith.refreshToken({
+        refreshTokenRequest: {
+          refreshToken,
+        },
+      })
+      this.#accessToken = response.accessToken
     }
     return this.#accessToken
   }

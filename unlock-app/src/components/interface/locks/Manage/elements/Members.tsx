@@ -50,14 +50,14 @@ export const Members = ({
   const web3Service = useWeb3Service()
 
   const getMembers = async () => {
-    const result = await locksmithService.keys(
+    const response = await locksmithService.keys({
       network,
       lockAddress,
-      filters.query,
-      filters.filterKey,
-      filters.expiration
-    )
-    return result.data
+      filterKey: filters.filterKey,
+      expiration: filters.expiration,
+      query: filters.query,
+    })
+    return response
   }
 
   const getLockVersion = async (): Promise<number> => {
