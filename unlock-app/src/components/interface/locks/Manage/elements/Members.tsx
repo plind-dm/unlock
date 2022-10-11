@@ -1,20 +1,19 @@
-import { useQueries } from 'react-query'
-import { useAuth } from '~/contexts/AuthenticationContext'
-import { useStorageService } from '~/utils/withStorageService'
-import { useWalletService } from '~/utils/withWalletService'
+import { useQueries } from '@tanstack/react-query'
 import { ToastHelper } from '~/components/helpers/toast.helper'
 import { useWeb3Service } from '~/utils/withWeb3Service'
 import { ImageBar } from './ImageBar'
 import { MemberCard } from './MemberCard'
 import { paginate } from '~/utils/pagination'
 import { PaginationBar } from './PaginationBar'
-import { useState } from 'react'
 import { locksmithService } from '~/services/locksmithService'
+import React from 'react'
 
 interface MembersProps {
   lockAddress: string
   network: number
   loading: boolean
+  setPage: (page: number) => void
+  page: number
   filters?: {
     [key: string]: any
   }
@@ -40,16 +39,15 @@ export const Members = ({
   lockAddress,
   network,
   loading: loadingFilters,
+  setPage,
+  page,
   filters = {
     query: '',
     filterKey: 'owner',
     expiration: 'all',
   },
 }: MembersProps) => {
-  const { account } = useAuth()
-  const walletService = useWalletService()
   const web3Service = useWeb3Service()
-  const [page, setPage] = useState(1)
 
   const getMembers = async () => {
     const result = await locksmithService.keys(
@@ -70,22 +68,24 @@ export const Members = ({
   const [
     { isLoading, data: members = [] },
     { isLoading: isLoadingVersion, data: lockVersion = 0 },
-  ] = useQueries([
-    {
-      queryFn: getMembers,
-      queryKey: ['getMembers', lockAddress, network, filters],
-      onError: () => {
-        ToastHelper.error('There is some unexpected issue, please try again')
+  ] = useQueries({
+    queries: [
+      {
+        queryFn: getMembers,
+        queryKey: ['getMembers', lockAddress, network, filters],
+        onError: () => {
+          ToastHelper.error('There is some unexpected issue, please try again')
+        },
       },
-    },
-    {
-      queryFn: getLockVersion,
-      queryKey: ['getLockVersion', lockAddress, network],
-      onError: () => {
-        ToastHelper.error('There is some unexpected issue, please try again')
+      {
+        queryFn: getLockVersion,
+        queryKey: ['getLockVersion', lockAddress, network],
+        onError: () => {
+          ToastHelper.error('There is some unexpected issue, please try again')
+        },
       },
-    },
-  ])
+    ],
+  })
 
   const loading = isLoadingVersion || isLoading || loadingFilters
   const noItems = members?.length === 0 && !loading

@@ -5,9 +5,13 @@ import { useEffect, useState } from 'react'
 import { MemberFilter } from '~/unlockTypes'
 import { useDebounce } from 'react-use'
 import { getAddressForName } from '~/hooks/useEns'
+import React from 'react'
+
 interface FilterBarProps {
   setFilters?: (filters: any) => void
   setLoading?: (loading: boolean) => void
+  setPage: (page: number) => void
+  page?: number
   filters?: {
     [key: string]: any
   }
@@ -43,25 +47,28 @@ export const FilterBar = ({
   setFilters,
   setLoading,
   filters: defaultFilters,
+  setPage,
 }: FilterBarProps) => {
+  const [isTyping, setIsTyping] = useState(false)
   const [query, setQuery] = useState('')
   const [rawQueryValue, setRawQueryValue] = useState('')
-  const [isReady] = useDebounce(
+
+  const [_isReady] = useDebounce(
     async () => {
       const ensToAddress = await getAddressForName(rawQueryValue)
       const search = ensToAddress || rawQueryValue
       setQuery(search)
+      setIsTyping(false)
     },
     500,
     [rawQueryValue]
   )
 
-  const isLoading = !isReady()
   useEffect(() => {
     if (typeof setLoading === 'function') {
-      setLoading(isLoading)
+      setLoading(isTyping)
     }
-  }, [isLoading, setLoading])
+  }, [setLoading, isTyping])
 
   const expirations = Object.values(ExpirationStatus ?? {})
   const [openSearch, setOpenSearch] = useState(false)
@@ -88,12 +95,8 @@ export const FilterBar = ({
       expiration,
       query,
     })
-  }, [expiration, filterKey, query, setFilters])
-
-  const onSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e?.target?.value || ''
-    setRawQueryValue(value)
-  }
+    setPage(1) // set default page on search to show results
+  }, [expiration, filterKey, query, setFilters, setPage])
 
   const Expiration = () => {
     return (
@@ -144,9 +147,8 @@ export const FilterBar = ({
                     label="Filter by"
                     options={filters}
                     defaultValue={filterKey}
-                    onChange={(filter) => {
+                    onChange={(filter: any) => {
                       setFilterKey(filter)
-                      setQuery('')
                       setRawQueryValue('')
                     }}
                   />
@@ -155,7 +157,10 @@ export const FilterBar = ({
               <div className="mt-auto -mb-1.5">
                 <Input
                   size="small"
-                  onChange={onSearch}
+                  onChange={(e: any) => {
+                    setIsTyping(true)
+                    setRawQueryValue(e?.target?.value)
+                  }}
                   value={rawQueryValue}
                   disabled={disableSearch}
                 />
