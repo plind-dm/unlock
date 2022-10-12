@@ -62,8 +62,40 @@ interface LoginPromptProps {
 }
 export class StorageService extends EventEmitter {
   public host: string
-
   public locksmith: LocksmithService
+
+  #accessToken: string | null = null
+
+  loginRequest = false
+
+  get accessToken() {
+    const token = this.#accessToken
+    if (!token) {
+      return null
+    }
+    return isExpired(token) ? null : token
+  }
+
+  set accessToken(token: string | null) {
+    this.#accessToken = token
+  }
+
+  get refreshToken() {
+    return localStorage.getItem(`${APP_NAME}.refresh-token`)
+  }
+
+  set refreshToken(token: string | null) {
+    if (!token) {
+      return
+    }
+    localStorage.setItem(`${APP_NAME}.refresh-token`, token)
+  }
+
+  get isAuthenticated() {
+    const accessToken = this.#accessToken
+    const refreshToken = this.refreshToken
+    return Boolean(accessToken && refreshToken && !isExpired(accessToken))
+  }
 
   constructor(host: string) {
     super()
@@ -71,6 +103,37 @@ export class StorageService extends EventEmitter {
     this.locksmith = new LocksmithService(
       new LocksmithServiceConfiguration({
         basePath: host,
+        fetchApi: async (input, init) => {
+          const authToken = this.refreshToken
+          const accessToken = this.accessToken
+          const response = await fetch(input, {
+            ...init,
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              ...init?.headers,
+            },
+          })
+          if ([401, 403].includes(response.status)) {
+            if (!authToken) {
+              return fetch(input, init)
+            }
+            const { accessToken: newAccessToken } =
+              await this.locksmith.refreshToken({
+                refreshTokenRequest: {
+                  refreshToken: authToken!,
+                },
+              })
+            this.accessToken = newAccessToken
+            return fetch(input, {
+              ...init,
+              headers: {
+                Authorization: `Bearer ${newAccessToken}`,
+                ...init?.headers,
+              },
+            })
+          }
+          return response
+        },
       })
     )
   }
@@ -90,60 +153,22 @@ export class StorageService extends EventEmitter {
   }
 
   async signOut() {
-    try {
-      this.locksmith.revoke({
-        refreshToken: this.refreshToken,
-      })
-      this.#accessToken = null
-      this.refreshToken = null
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error.message)
-      }
-    }
-  }
-
-  async loginPrompt({ walletService, address, chainId }: LoginPromptProps) {
-    try {
-      const refreshToken = this.refreshToken
-      if (refreshToken) {
-        await this.getAccessToken()
-      } else {
-        const message = await this.getSiweMessage({
-          address,
-          chainId,
-        })
-        const signature = await walletService.signMessage(
-          message,
-          'personal_sign'
-        )
-        await this.login(message, signature)
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error(err.message)
-      }
-    }
-  }
-
-  #accessToken: null | string = null
-
-  get refreshToken() {
-    return localStorage.getItem(`${APP_NAME}.refresh-token`)
-  }
-
-  set refreshToken(refreshToken: string | null) {
-    if (refreshToken) {
-      localStorage.setItem(`${APP_NAME}.refresh-token`, refreshToken)
-    } else {
-      localStorage.removeItem(`${APP_NAME}.refresh-token`)
-    }
-  }
-
-  get isAuthenticated() {
-    const accessToken = this.#accessToken
     const refreshToken = this.refreshToken
-    return Boolean(accessToken && refreshToken && !isExpired(accessToken))
+    if (!refreshToken) {
+      return
+    }
+    this.locksmith.revoke({
+      refreshToken,
+    })
+    this.#accessToken = null
+    this.refreshToken = null
+  }
+
+  async loginPrompt({ walletService, address }: LoginPromptProps) {
+    this.authenticate({
+      walletService,
+      address,
+    })
   }
 
   async getAccessToken() {
@@ -153,30 +178,48 @@ export class StorageService extends EventEmitter {
     }
     if (!this.#accessToken || isExpired(this.#accessToken)) {
       const response = await this.locksmith.refreshToken({
-        refreshTokenRequest: {
-          refreshToken,
-        },
+        refreshToken,
       })
       this.#accessToken = response.accessToken
     }
     return this.#accessToken
   }
 
-  async getSiweMessage({
+  async authenticate({
     address,
-    chainId,
-    version = '1',
-  }: GetSiweMessageProps) {
+    walletService,
+  }: {
+    address: string
+    walletService: WalletService
+  }) {
+    if (this.loginRequest) {
+      return
+    }
+
+    this.loginRequest = true
+
+    if (this.refreshToken) {
+      return
+    }
     const siweMessage = LocksmithService.createSiweMessage({
       domain: 'locksmith.unlock-protocol.com',
       uri: this.host,
       address,
-      chainId,
-      version,
-      statement: 'Authorize',
+      chainId: 1,
+      version: '1',
+      statement: '',
       nonce: generateNonce(),
     })
-    return siweMessage.prepareMessage()
+    const message = siweMessage.prepareMessage()
+    const signature = await walletService.signMessage(message, 'personal_sign')
+    const authResponse = await this.locksmith.login({
+      loginRequest: {
+        message,
+        signature,
+      },
+    })
+    this.refreshToken = authResponse.refreshToken
+    this.#accessToken = authResponse.accessToken
   }
 
   /**

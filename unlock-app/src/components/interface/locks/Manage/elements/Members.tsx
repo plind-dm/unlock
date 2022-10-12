@@ -5,8 +5,10 @@ import { ImageBar } from './ImageBar'
 import { MemberCard } from './MemberCard'
 import { paginate } from '~/utils/pagination'
 import { PaginationBar } from './PaginationBar'
-import { locksmithService } from '~/services/locksmithService'
 import React from 'react'
+import { useStorageService } from '~/utils/withStorageService'
+import { useWalletService } from '~/utils/withWalletService'
+import { useAuth } from '~/contexts/AuthenticationContext'
 
 interface MembersProps {
   lockAddress: string
@@ -48,14 +50,22 @@ export const Members = ({
   },
 }: MembersProps) => {
   const web3Service = useWeb3Service()
-
+  const walletService = useWalletService()
+  const { account } = useAuth()
+  const storageService = useStorageService()
   const getMembers = async () => {
-    const response = await locksmithService.keys({
+    storageService.authenticate({
+      address: account!,
+      walletService,
+    })
+    const response = await storageService.getKeys({
       network,
       lockAddress,
-      filterKey: filters.filterKey,
-      expiration: filters.expiration,
-      query: filters.query,
+      filters: {
+        filterKey: filters.filterKey,
+        expiration: filters.expiration,
+        query: filters.query,
+      },
     })
     return response
   }

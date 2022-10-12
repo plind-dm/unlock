@@ -24,10 +24,9 @@ import { FilterBar } from './elements/FilterBar'
 import { buildCSV } from '~/utils/csv'
 import FileSaver from 'file-saver'
 import { FaFileCsv as CsvIcon } from 'react-icons/fa'
-import { useWalletService } from '~/utils/withWalletService'
 import { useLockManager } from '~/hooks/useLockManager'
 import { addressMinify } from '~/utils/strings'
-import { locksmithService } from '~/services/locksmithService'
+import { useStorageService } from '~/utils/withStorageService'
 
 interface ActionBarProps {
   lockAddress: string
@@ -50,14 +49,16 @@ export function downloadAsCSV(cols: string[], metadata: any[]) {
 
 const ActionBar = ({ lockAddress, network }: ActionBarProps) => {
   const [isOpen, setIsOpen] = useState(false)
-
+  const storageService = useStorageService()
   const getMembers = async () => {
-    return locksmithService.keys({
+    return storageService.getKeys({
       lockAddress,
       network,
-      filterKey: 'owner',
-      query: '',
-      expiration: 'all',
+      filters: {
+        filterKey: 'owner',
+        query: '',
+        expiration: 'all',
+      },
     })
   }
 
