@@ -27,6 +27,7 @@ import { FaFileCsv as CsvIcon } from 'react-icons/fa'
 import { useLockManager } from '~/hooks/useLockManager'
 import { addressMinify } from '~/utils/strings'
 import { useStorageService } from '~/utils/withStorageService'
+import { useWalletService } from '~/utils/withWalletService'
 
 interface ActionBarProps {
   lockAddress: string
@@ -50,7 +51,14 @@ export function downloadAsCSV(cols: string[], metadata: any[]) {
 const ActionBar = ({ lockAddress, network }: ActionBarProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const storageService = useStorageService()
+  const walletService = useWalletService()
+  const { account } = useAuth()
   const getMembers = async () => {
+    await storageService.loginPrompt({
+      walletService,
+      address: account!,
+      chainId: 1,
+    })
     return storageService.getKeys({
       lockAddress,
       network,
