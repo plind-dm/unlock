@@ -49,17 +49,12 @@ export const failure = {
   getBulkMetadataFor: 'getBulkMetadataFor.failure',
 }
 
-interface GetSiweMessageProps {
-  address: string
-  chainId: number
-  version?: string
-}
-
 interface LoginPromptProps {
   address: string
   chainId: number
   walletService: WalletService
 }
+
 export class StorageService extends EventEmitter {
   public host: string
   public locksmith: LocksmithService
