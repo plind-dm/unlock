@@ -2,10 +2,7 @@ import express from 'express'
 import networks from '@unlock-protocol/networks'
 import { TicketsController } from '../../controllers/v2/ticketsController'
 import { keyOwnerMiddleware } from '../../utils/middlewares/keyOwnerMiddleware'
-import {
-  authenticatedMiddleware,
-  applicationOnlyMiddleware,
-} from '../../utils/middlewares/auth'
+import { authenticatedMiddleware } from '../../utils/middlewares/auth'
 import { isVerifierMiddleware } from '../../utils/middlewares/isVerifierMiddleware'
 import { Web3Service } from '@unlock-protocol/unlock-js'
 import { lockManagerMiddleware } from './../../utils/middlewares/lockManager'
@@ -45,10 +42,18 @@ router.post(
 router.get(
   '/:network/:lockAddress/:keyId/qr',
   authenticatedMiddleware,
-  applicationOnlyMiddleware,
   lockManagerMiddleware,
   (req, res) => {
     ticketsController.getQrCode(req, res)
+  }
+)
+
+router.get(
+  '/:network/:lockAddress/:keyId/ticket',
+  authenticatedMiddleware,
+  keyOwnerMiddleware,
+  (req, res) => {
+    ticketsController.ticket(req, res)
   }
 )
 

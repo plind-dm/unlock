@@ -5,7 +5,9 @@
   "extends": "@unlock-protocol/tsconfig",
   "compilerOptions": {
     "outDir": "build",
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx"
   },
   "exclude": [
     "build"
