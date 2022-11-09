@@ -251,8 +251,9 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                   </div>
 
                                   <Pricing
-                                    keyPrice={formattedData.formattedKeyPrice}
-                                    usdPrice={formattedData.convertedKeyPrice}
+                                    keyPrice={
+                                      item.name == 'DAO-Author' ? '2500+' : '1+'
+                                    }
                                     isCardEnabled={formattedData.cardEnabled}
                                   />
                                 </div>
@@ -264,9 +265,9 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                     <LabeledItem
                                       label="Duration"
                                       icon={DurationIcon}
-                                      value={formattedData.formattedDuration}
+                                      value={'12 hours'}
                                     />
-                                    <LabeledItem
+                                    {/* <LabeledItem
                                       label="Quantity"
                                       icon={QuantityIcon}
                                       value={
@@ -274,7 +275,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                           ? 'Sold out'
                                           : formattedData.formattedKeysAvailable
                                       }
-                                    />
+                                    /> */}
                                     {item.recurringPayments && (
                                       <LabeledItem
                                         label="Renew"
