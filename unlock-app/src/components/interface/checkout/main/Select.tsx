@@ -16,7 +16,6 @@ import {
   RiCheckboxBlankCircleLine as CheckBlankIcon,
   RiCheckboxCircleFill as CheckIcon,
   RiTimer2Line as DurationIcon,
-  RiCoupon2Line as QuantityIcon,
   RiExternalLinkLine as ExternalLinkIcon,
   RiRepeatFill as RecurringIcon,
   RiCheckboxCircleFill as CheckMarkIcon,
