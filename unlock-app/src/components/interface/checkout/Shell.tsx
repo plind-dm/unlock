@@ -9,7 +9,6 @@ import {
   RiArrowLeftLine as BackIcon,
 } from 'react-icons/ri'
 import * as Avatar from '@radix-ui/react-avatar'
-import SvgComponents from '../svg'
 import mintingAnimation from '~/animations/minting.json'
 import mintedAnimation from '~/animations/minted.json'
 import errorAnimation from '~/animations/error.json'
@@ -77,29 +76,19 @@ interface CheckoutHeadProps {
   iconURL?: string
 }
 
-export function CheckoutHead({ title, iconURL }: CheckoutHeadProps) {
+export function CheckoutHead({ title }: CheckoutHeadProps) {
   return (
     <header className="px-6 py-2 space-y-2">
-      <div className="inset-0 flex flex-wrap items-center flex-1 gap-6">
+      <div className="flex justify-center">
         <Avatar.Root>
           <Avatar.Image
-            className="inline-flex items-center justify-center w-16 h-16 rounded-full"
-            src={iconURL}
+            className="inline-flex items-center justify-center w-16 h-16"
+            src="images/radiant.png"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             alt={title}
-            width={64}
-            height={64}
+            width="100%"
           />
-          <Avatar.Fallback>
-            <SvgComponents.UnlockMonogram
-              className="rounded-full"
-              height={64}
-              width={64}
-            />
-          </Avatar.Fallback>
         </Avatar.Root>
-        <div>
-          <h1 className="text-lg font-bold"> {title || 'Unlock Protocol'} </h1>
-        </div>
       </div>
     </header>
   )
@@ -111,7 +100,7 @@ interface NavigationProps {
 }
 
 export function TopNavigation({ onClose, onBack }: NavigationProps) {
-  const navigationClass = `flex items-center p-6 ${
+  const navigationClass = `flex items-center p-6 pb-0 ${
     onBack ? 'justify-between' : 'justify-end'
   }`
   return (

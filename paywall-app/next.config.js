@@ -15,16 +15,16 @@ module.exports = {
 
     // output the js lib
     const unlockJSFile = require.resolve('@unlock-protocol/paywall')
-    config.plugins.push(
-      new CopyWebpackPlugin({
-        patterns: [
-          {
-            from: unlockJSFile,
-            to: join(__dirname, 'src/static/unlock.latest.min.js'),
-          },
-        ],
-      })
-    )
+    // config.plugins.push(
+    //   new CopyWebpackPlugin({
+    //     patterns: [
+    //       {
+    //         from: unlockJSFile,
+    //         to: join(__dirname, 'src/static/unlock.latest.min.js'),
+    //       },
+    //     ],
+    //   })
+    // )
 
     return config
   },

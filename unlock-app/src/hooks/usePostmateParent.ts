@@ -6,6 +6,7 @@ export const usePostmateParent = (model: any = {}) => {
 
   const handshake = async () => {
     const parent = await new Postmate.Model(model)
+    console.log('parent')
     setParent(parent)
   }
 

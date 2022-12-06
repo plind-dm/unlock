@@ -16,14 +16,24 @@ export function Pricing({ usdPrice, keyPrice, isCardEnabled }: PricingProps) {
     return (
       <div className="grid text-right">
         <span className="font-semibold">{usdPrice}</span>
-        <span className="text-sm text-gray-500">{keyPrice} </span>
+        <span
+          className="text-sm text-gray-500"
+          style={{ fontSize: '0.75rem', fontWeight: 'lighter', opacity: '0.6' }}
+        >
+          {keyPrice}{' '}
+        </span>
       </div>
     )
   }
   return (
     <div className="grid text-right">
       <span className="font-semibold">{keyPrice} </span>
-      <span className="text-sm text-gray-500">{usdPrice}</span>
+      <span
+        className="text-sm text-gray-500"
+        style={{ fontSize: '0.75rem', fontWeight: 'lighter', opacity: '0.6' }}
+      >
+        {usdPrice}
+      </span>
     </div>
   )
 }

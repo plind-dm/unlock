@@ -8,10 +8,10 @@ export function Membership() {
 
   useEffect(() => {
     const redirect = () => {
-      const location = router.query.redirect?.toString() ?? '/'
-      location.startsWith('/') && location.startsWith('#')
-        ? router.push(location)
-        : window.location.assign(location)
+      // const location = router.query.redirect?.toString() ?? '/'
+      // location.startsWith('/') && location.startsWith('#')
+      //   ? router.push(location)
+      //   : window.location.assign(location)
     }
     window.addEventListener('unlockProtocol.closeModal', redirect)
     return () =>

@@ -1,15 +1,11 @@
 import { Button, Tooltip } from '@unlock-protocol/ui'
 import { useActor } from '@xstate/react'
-import { ReactNode, useMemo, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { useAuth } from '~/contexts/AuthenticationContext'
 import { useAuthenticate } from '~/hooks/useAuthenticate'
 import { addressMinify, minifyEmail } from '~/utils/strings'
-import SvgComponents from '../svg'
 import { CheckoutService } from './main/checkoutMachine'
 import { ConnectService } from './Connect/connectMachine'
-import { RiWalletFill as WalletIcon } from 'react-icons/ri'
-import { SiBrave as BraveWalletIcon } from 'react-icons/si'
-import { DownloadWallet } from '../DownloadWallet'
 interface SignedInProps {
   onDisconnect?: () => void
   isUnlockAccount: boolean
@@ -63,46 +59,17 @@ interface SignedOutProps {
     provider: 'METAMASK' | 'UNLOCK' | 'WALLET_CONNECT' | 'COINBASE'
   ): Promise<void>
   onUnlockAccount(): void
+  isLoading?: boolean
   injectedProvider: any
 }
 
 export function SignedOut({
-  onUnlockAccount,
   authenticateWithProvider,
+  isLoading,
   injectedProvider,
 }: SignedOutProps) {
-  const iconButtonClass =
-    'inline-flex items-center w-10 h-10 justify-center hover:[box-shadow:_0px_4px_15px_rgba(0,0,0,0.08)] [box-shadow:_0px_8px_30px_rgba(0,0,0,0.08)] rounded-full'
-  const [isDownloadWallet, setIsDownloadWallet] = useState(false)
-
-  const ButtonIcon = useMemo(() => {
-    const walletIcons = {
-      metamask: <SvgComponents.Metamask width={32} />,
-      brave: <BraveWalletIcon size={20} className="m-1.5" />,
-      frame: <SvgComponents.Frame width={24} />,
-      status: <SvgComponents.Status width={32} />,
-      default: <WalletIcon size={20} className="m-1.5" />,
-    }
-
-    if (injectedProvider?.isMetaMask) {
-      return walletIcons.metamask
-    }
-
-    if (injectedProvider?.isBraveWallet) {
-      return walletIcons.brave
-    }
-
-    if (injectedProvider?.isFrame) {
-      return walletIcons.frame
-    }
-
-    if (injectedProvider?.isStatus) {
-      return walletIcons.status
-    }
-
-    return walletIcons.default
-  }, [injectedProvider])
-
+  const [, setIsDownloadWallet] = useState(false)
+  console.log('isLoading', isLoading)
   const onInjectedHandler = () => {
     if (injectedProvider) {
       return authenticateWithProvider('METAMASK')
@@ -119,57 +86,14 @@ export function SignedOut({
   }
 
   return (
-    <div className="grid w-full grid-flow-col grid-cols-11">
-      <div className="grid items-center col-span-5 space-y-2 justify-items-center">
-        <h4 className="text-sm"> Have a crypto wallet? </h4>
-        <DownloadWallet
-          isOpen={isDownloadWallet}
-          setIsOpen={setIsDownloadWallet}
-        />
-        <div className="flex items-center justify-around w-full">
-          <button
-            aria-label="injected wallet"
-            onClick={onInjectedHandler}
-            type="button"
-            className={iconButtonClass}
-          >
-            {ButtonIcon}
-          </button>
-          <button
-            aria-label="wallet connect"
-            onClick={() => authenticateWithProvider('WALLET_CONNECT')}
-            type="button"
-            className={iconButtonClass}
-          >
-            <SvgComponents.WalletConnect width={32} />
-          </button>
-          <button
-            aria-label="coinbase wallet"
-            onClick={() => authenticateWithProvider('COINBASE')}
-            type="button"
-            className={iconButtonClass}
-          >
-            <SvgComponents.CoinbaseWallet width={32} />
-          </button>
-        </div>
-      </div>
-      <div className="flex justify-center col-span-1">
-        <div className="h-full border-l"></div>
-      </div>
-      <div className="grid items-center col-span-5 space-y-2 justify-items-center">
-        <h4 className="text-sm"> Don&apos;t have a crypto wallet? </h4>
-        <Button
-          onClick={(event) => {
-            event.preventDefault()
-            onUnlockAccount()
-          }}
-          size="small"
-          variant="outlined-primary"
-          className="w-full"
-        >
-          Get started
-        </Button>
-      </div>
+    <div className="grid w-full">
+      <Button
+        disabled={isLoading}
+        onClick={onInjectedHandler}
+        className="hover:opacity-50 hover:bg-brand-ui-primary"
+      >
+        Connect Wallet
+      </Button>
     </div>
   )
 }
@@ -177,12 +101,14 @@ export function SignedOut({
 interface ConnectedCheckoutProps {
   injectedProvider?: unknown
   service: CheckoutService | ConnectService
+  isLoading?: boolean
   children?: ReactNode
 }
 
 export function Connected({
   service,
   injectedProvider,
+  isLoading,
   children,
 }: ConnectedCheckoutProps) {
   const [state, send] = useActor(service)
@@ -190,6 +116,13 @@ export function Connected({
   const { authenticateWithProvider } = useAuthenticate({
     injectedProvider,
   })
+
+  useEffect(() => {
+    if (account) {
+      send('DISCONNECT')
+      deAuthenticate()
+    }
+  }, [account, send, deAuthenticate])
 
   const onDisconnect = () => {
     send('DISCONNECT')
@@ -209,6 +142,7 @@ export function Connected({
     <div>
       <SignedOut
         injectedProvider={injectedProvider}
+        isLoading={isLoading}
         onUnlockAccount={() => {
           send('UNLOCK_ACCOUNT')
         }}

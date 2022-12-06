@@ -2,7 +2,6 @@ import { useRouter } from 'next/router'
 import React, { useEffect } from 'react'
 import { selectProvider } from '~/hooks/useAuthenticate'
 import { useCheckoutCommunication } from '~/hooks/useCheckoutCommunication'
-import { getPaywallConfigFromQuery } from '~/utils/paywallConfig'
 import getOauthConfigFromQuery from '~/utils/oauth'
 import { useConfig } from '~/utils/withConfig'
 import { Checkout } from './main'
@@ -19,10 +18,23 @@ export function CheckoutPage() {
   const communication = useCheckoutCommunication()
 
   // Get paywallConfig or oauthConfig from the query parameters.
-  const paywallConfigFromQuery = getPaywallConfigFromQuery(query)
+  // const paywallConfigFromQuery = getPaywallConfigFromQuery(query)
   const oauthConfig = getOauthConfigFromQuery(query)
 
-  const paywallConfig = communication.paywallConfig || paywallConfigFromQuery
+  const paywallConfig = {
+    redirectUri: '',
+    network: 42161,
+    locks: {
+      ['0x188ef9f717c4df8b2280a477117cacac42faf069']: {},
+      ['0x9bf16924f7fc8888575ac388e87ed8f706c853db']: {},
+    },
+    title: 'Radiant DAO',
+    icon: 'https://community.radiant.capital/uploads/default/original/1X/unlock-logo.svg',
+    callToAction: {
+      default: 'Lock RDNT token',
+    },
+    referrer: '0x67dec02d34ea56bcf9f7c9b318298dda8c562080',
+  }
 
   const injectedProvider =
     communication.providerAdapter || selectProvider(config)
@@ -80,7 +92,7 @@ export function CheckoutPage() {
   }
   return (
     <Container>
-      <div className="bg-white max-w-md rounded-xl flex flex-col w-full h-[90vh] sm:h-[80vh] max-h-[42rem]">
+      <div className="bg-white max-w-md rounded-xl flex flex-col w-full h-[90vh] sm:h-[60vh] max-h-[42rem]">
         <div className="flex items-center justify-end mx-4 mt-4">
           <CloseButton
             onClick={() => {

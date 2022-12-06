@@ -40,7 +40,6 @@ export function Checkout({
   })
   const [state] = useActor(checkoutService)
   const { account } = useAuth()
-  const { mint, messageToSign } = state.context
   const matched = state.value.toString()
   const paywallConfigChanged = !isEqual(
     paywallConfig,
@@ -63,41 +62,6 @@ export function Checkout({
     }
   }, [account, communication])
 
-  const onClose = useCallback(
-    (params: Record<string, string> = {}) => {
-      if (redirectURI) {
-        if (mint && mint?.status === 'ERROR') {
-          redirectURI.searchParams.append('error', 'access-denied')
-        }
-
-        if (paywallConfig.messageToSign && !messageToSign) {
-          redirectURI.searchParams.append('error', 'user did not sign message')
-        }
-
-        if (messageToSign) {
-          redirectURI.searchParams.append('signature', messageToSign.signature)
-          redirectURI.searchParams.append('address', messageToSign.address)
-        }
-        for (const [key, value] of Object.entries(params)) {
-          redirectURI.searchParams.append(key, value)
-        }
-        return window.location.assign(redirectURI)
-      }
-      if (!communication?.insideIframe) {
-        window.history.back()
-      } else {
-        communication.emitCloseModal()
-      }
-    },
-    [
-      communication,
-      redirectURI,
-      mint,
-      messageToSign,
-      paywallConfig.messageToSign,
-    ]
-  )
-
   const onBack = useMemo(() => {
     const unlockAccount = state.children?.unlockAccount
     const canBackInUnlockAccountService = unlockAccount
@@ -112,6 +76,24 @@ export function Checkout({
     }
     return undefined
   }, [state, checkoutService])
+
+  const onClose = useCallback(
+    (params: Record<string, string> = {}) => {
+      if (redirectURI) {
+        for (const [key, value] of Object.entries(params)) {
+          redirectURI.searchParams.append(key, value)
+        }
+        return window.location.assign(redirectURI)
+      }
+      if (!communication?.insideIframe) {
+        window.history.back()
+      } else {
+        window?.top?.location.replace('https://community.radiant.capital')
+        communication.emitCloseModal()
+      }
+    },
+    [communication, redirectURI]
+  )
 
   const Content = useCallback(() => {
     switch (matched) {
@@ -247,11 +229,11 @@ export function Checkout({
 
   return (
     <CheckoutTransition>
-      <div className="bg-white max-w-md rounded-xl flex flex-col w-full h-[90vh] sm:h-[80vh] min-h-[32rem] max-h-[42rem]">
-        <TopNavigation
-          onClose={!paywallConfig?.persistentCheckout ? onClose : undefined}
-          onBack={onBack}
-        />
+      <div
+        className="bg-white max-w-md rounded-xl flex flex-col w-full h-[90vh] sm:h-[60vh] min-h-[32rem] max-h-[42rem]"
+        style={{ height: '56vh' }}
+      >
+        <TopNavigation onClose={onClose} onBack={onBack} />
         <CheckoutHead
           iconURL={paywallConfig.icon}
           title={paywallConfig.title}

@@ -13,9 +13,7 @@ import { RadioGroup } from '@headlessui/react'
 import { getLockProps } from '~/utils/lock'
 import { getFiatPricing } from '~/hooks/useCards'
 import {
-  RiCheckboxBlankCircleLine as CheckBlankIcon,
-  RiCheckboxCircleFill as CheckIcon,
-  RiTimer2Line as DurationIcon,
+  // RiTimer2Line as DurationIcon,
   RiExternalLinkLine as ExternalLinkIcon,
   RiRepeatFill as RecurringIcon,
   RiCheckboxCircleFill as CheckMarkIcon,
@@ -24,15 +22,13 @@ import { Badge, Button, Icon } from '@unlock-protocol/ui'
 import { LabeledItem } from '../LabeledItem'
 import * as Avatar from '@radix-ui/react-avatar'
 import { numberOfAvailableKeys } from '~/utils/checkoutLockUtils'
-import { useCheckoutSteps } from './useCheckoutItems'
-
 interface Props {
   injectedProvider: unknown
   checkoutService: CheckoutService
 }
 
 export function Select({ checkoutService, injectedProvider }: Props) {
-  const [state, send] = useActor(checkoutService)
+  const [state] = useActor(checkoutService)
   const { paywallConfig, lock: selectedLock } = state.context
   const [lock, setLock] = useState<LockState | undefined>(selectedLock)
   const { isLoading: isLocksLoading, data: locks } = useQuery(
@@ -89,14 +85,6 @@ export function Select({ checkoutService, injectedProvider }: Props) {
     }))
   }, [paywallConfig.locks, paywallConfig.network])
 
-  const skipQuantity = useMemo(() => {
-    const maxRecipients = lock?.maxRecipients || paywallConfig.maxRecipients
-    const minRecipients = lock?.minRecipients || paywallConfig.minRecipients
-    const hasMaxRecipients = maxRecipients && maxRecipients > 1
-    const hasMinRecipients = minRecipients && minRecipients > 1
-    return !(hasMaxRecipients || hasMinRecipients)
-  }, [lock, paywallConfig])
-
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false)
   const config = useConfig()
   const { account, network, changeNetwork, isUnlockAccount } = useAuth()
@@ -145,8 +133,6 @@ export function Select({ checkoutService, injectedProvider }: Props) {
     // if locks are sold out and the user is not an existing member of the lock
     (lock?.isSoldOut && !(membership?.member || membership?.expired))
 
-  const stepItems = useCheckoutSteps(checkoutService)
-
   useEffect(() => {
     if (locks?.length) {
       const filtered = locks.filter((lock) => !lock.isSoldOut)
@@ -154,10 +140,13 @@ export function Select({ checkoutService, injectedProvider }: Props) {
       setLock(item || filtered[0])
     }
   }, [locks])
-
   return (
     <Fragment>
-      <Stepper position={1} service={checkoutService} items={stepItems} />
+      <Stepper
+        position={1}
+        service={checkoutService}
+        locked={lock == undefined}
+      />
       <main className="h-full px-6 py-2 overflow-auto">
         {isLocksLoading ? (
           <div className="mt-6 space-y-4">
@@ -175,49 +164,45 @@ export function Select({ checkoutService, injectedProvider }: Props) {
             {locksGroupedByNetwork &&
               Object.entries(locksGroupedByNetwork).map(([network, items]) => (
                 <section key={network} className="space-y-4">
-                  <header>
+                  {/* <header>
                     <p className="text-lg font-bold text-brand-ui-primary">
                       {config?.networks[network]?.name}
                     </p>
-                  </header>
+                  </header> */}
                   {items.map((item) => {
                     const disabled = item.isSoldOut && !item.isMember
+                    const isMember = memberships?.find(
+                      (m) => m.lock === item.address
+                    )?.member
                     return (
                       <RadioGroup.Option
                         disabled={disabled}
                         key={item.address}
                         value={item}
-                        className={({ checked, disabled }) =>
+                        className={() =>
                           `flex flex-col p-2 w-full gap-4 items-center border border-gray-200 rounded-xl cursor-pointer relative ${
-                            checked && 'border-ui-main-100 bg-gray-100'
-                          } ${
-                            disabled &&
-                            `opacity-80 bg-gray-100  ${
-                              isMembershipsLoading
-                                ? 'cursor-wait'
-                                : 'cursor-not-allowed'
-                            }`
+                            isMember && 'bg-authenticated'
                           }`
                         }
                       >
-                        {({ checked }) => {
+                        {() => {
                           const formattedData = getLockProps(
                             item,
                             item.network,
                             config.networks[item.network].baseCurrencySymbol,
                             item.name
                           )
-                          const lockImageURL = `${config.services.storage.host}/lock/${item?.address}/icon`
-                          const isMember = memberships?.find(
-                            (m) => m.lock === item.address
-                          )?.member
                           return (
                             <Fragment>
                               <div className="flex w-full gap-x-4">
                                 <div>
                                   <Avatar.Root className="inline-flex items-center justify-center w-14 h-14 rounded-xl">
                                     <Avatar.Image
-                                      src={lockImageURL}
+                                      src={
+                                        item.name == 'DAO-Author'
+                                          ? '/images/author.png'
+                                          : '/images/member.png'
+                                      }
                                       alt={item.name}
                                     />
                                     <Avatar.Fallback className="bg-gray-50">
@@ -240,6 +225,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center gap-2 text-sm cursor-pointer text-brand-ui-primary hover:opacity-75"
+                                      style={{ color: '#7159FF' }}
                                     >
                                       View Contract
                                       <Icon
@@ -253,6 +239,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                     keyPrice={
                                       item.name == 'DAO-Author' ? '2500+' : '1+'
                                     }
+                                    usdPrice={'locked RDNT'}
                                     isCardEnabled={formattedData.cardEnabled}
                                   />
                                 </div>
@@ -261,11 +248,11 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                               <div className="w-full space-y-2">
                                 <div className="flex justify-between w-full place-items-center">
                                   <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                                    <LabeledItem
+                                    {/* <LabeledItem
                                       label="Duration"
                                       icon={DurationIcon}
                                       value={'12 hours'}
-                                    />
+                                    /> */}
                                     {/* <LabeledItem
                                       label="Quantity"
                                       icon={QuantityIcon}
@@ -288,7 +275,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                       />
                                     )}
                                   </div>
-                                  <div>
+                                  {/* <div>
                                     {checked ? (
                                       <Icon
                                         size={25}
@@ -302,7 +289,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                                         icon={CheckBlankIcon}
                                       />
                                     )}
-                                  </div>
+                                  </div> */}
                                 </div>
                                 {isMember && (
                                   <div className="flex items-center justify-between w-full px-2 py-1 text-sm text-gray-500 border border-gray-300 rounded">
@@ -329,9 +316,10 @@ export function Select({ checkoutService, injectedProvider }: Props) {
           </RadioGroup>
         )}
       </main>
-      <footer className="grid items-center px-6 pt-6 border-t">
+      <footer className="grid items-center px-6 pt-2 border-t">
         <Connected
           service={checkoutService}
+          isLoading={isLocksLoading}
           injectedProvider={injectedProvider}
         >
           <div className="grid">
@@ -349,7 +337,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                 Switch to {lockNetwork?.name}
               </Button>
             )}
-            {!isNetworkSwitchRequired && (
+            {/* {!isNetworkSwitchRequired && (
               <Button
                 disabled={isDisabled}
                 onClick={async (event) => {
@@ -367,7 +355,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
                     type: 'SELECT_LOCK',
                     lock,
                     existingMember: !!membership?.member,
-                    skipQuantity,
+                    skipQuantity: false,
                     // unlock account are unable to renew
                     expiredMember: isUnlockAccount
                       ? false
@@ -377,7 +365,7 @@ export function Select({ checkoutService, injectedProvider }: Props) {
               >
                 Next
               </Button>
-            )}
+            )} */}
           </div>
         </Connected>
         <PoweredByUnlock />

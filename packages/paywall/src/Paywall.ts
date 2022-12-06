@@ -11,7 +11,7 @@ import {
   Web3Window,
   enableInjectedProvider,
 } from './utils/enableInjectedProvider'
-import { unlockAppUrl } from './urls'
+// import { unlockAppUrl } from './urls'
 
 export const checkoutIframeClassName = 'unlock-protocol-checkout'
 
@@ -84,6 +84,7 @@ export class Paywall {
 
   loadCheckoutModal = (config?: PaywallConfig) => {
     if (this.iframe) {
+      this.shakeHands()
       this.showIframe()
     } else {
       this.shakeHands()
@@ -144,10 +145,11 @@ export class Paywall {
 
   shakeHands = async () => {
     const child = await new Postmate({
-      url: `${unlockAppUrl}/checkout`,
+      url: `${window.location.hostname}/checkout`,
       classListArray: [checkoutIframeClassName, 'show'],
     })
 
+    console.log('shakeHands', `${window.location.hostname}/checkout`)
     this.child = child
 
     this.iframe = document.getElementsByClassName(checkoutIframeClassName)[0]
@@ -174,6 +176,7 @@ export class Paywall {
   }
 
   handleTransactionInfoEvent = async ({ hash, lock }: TransactionInfo) => {
+    console.log('handleTransactionInfoEvent')
     const network =
       this.paywallConfig.locks[lock]?.network || this.paywallConfig.network
 
@@ -189,6 +192,7 @@ export class Paywall {
         true // Optimistic if missing
       )
       if (optimistic) {
+        console.log('unlockPage')
         this.unlockPage([lock])
       }
     }

@@ -1,4 +1,4 @@
-import { RiFlagLine as FinishIcon } from 'react-icons/ri'
+import { RiCheckLine } from 'react-icons/ri'
 import { Tooltip } from '@unlock-protocol/ui'
 import { twMerge } from 'tailwind-merge'
 import { ReactNode } from 'react'
@@ -21,12 +21,11 @@ export const Step = ({
   return <div className={stepIconClass}>{children}</div>
 }
 
-export const StepFinish = ({ active }: IconProps) => {
+export const StepFinish = () => {
   const finishIconClass = twMerge(
-    `font-medium box-border border p-0.5 w-5 text-xs h-5 rounded-full cursor-default`,
-    active && 'bg-ui-main-500 text-white fill-white border-none'
+    `font-medium box-border border p-0.5 w-5 text-xs h-5 rounded-full cursor-default bg-ui-main-500 text-white fill-white border-none`
   )
-  return <FinishIcon size={20} className={finishIconClass} />
+  return <RiCheckLine size={20} className={finishIconClass} />
 }
 
 export const StepFinished = ({ active }: IconProps) => {
@@ -68,7 +67,11 @@ export const StepButton = ({
 }
 
 export const StepTitle = ({ children }: { children: ReactNode }) => {
-  return <h4 className="text-sm font-medium text-ui-main-500">{children}</h4>
+  return (
+    <h4 className="text-sm" style={{ marginLeft: 10 }}>
+      {children}
+    </h4>
+  )
 }
 
 export interface StepItem {
@@ -79,56 +82,38 @@ export interface StepItem {
 }
 
 interface StepperProps {
-  items: StepItem[]
+  items?: StepItem[]
   position: number
   service: CheckoutService | UnlockAccountService
   disabled?: boolean
+  locked?: boolean
 }
 
-export const Stepper = ({
-  items,
-  position,
-  service,
-  disabled,
-}: StepperProps) => {
-  const index = items.findIndex((item) => item.id === position)
-  const step = items[index]
-  const base = items.slice(0, index).filter((item) => !item?.skip)
-  const rest = items.slice(index + 1).filter((item) => !item?.skip)
+// eslint-disable-next-line no-empty-pattern
+export const Stepper = ({ locked }: StepperProps) => {
   return (
-    <div className="flex items-center justify-between w-full gap-2 p-2 px-6 border-b">
-      <div className="flex items-center gap-1.5">
-        {base.map((item, idx) =>
-          item.to && !disabled ? (
-            <StepButton
-              key={idx}
-              onClick={() => {
-                service.send(item.to as any)
-              }}
-              label={item.name}
-            >
-              {idx + 1}
-            </StepButton>
-          ) : (
-            <Step key={idx}>{idx + 1}</Step>
-          )
-        )}
-        {!rest.length ? (
-          <StepFinished active />
-        ) : (
-          <Step active> {base.length + 1}</Step>
-        )}
-        <StepTitle>{step?.name}</StepTitle>
-      </div>
-      <div className="flex items-center gap-1.5">
-        {rest.map((_, index) =>
-          index + 1 >= rest.length ? (
-            <StepFinish key={index} />
-          ) : (
-            <Step key={index}>{base.length + index + 2}</Step>
-          )
-        )}
-      </div>
-    </div>
+    <>
+      {!locked ? (
+        <div className="flex w-full p-2 pl-6 border-b">
+          <StepFinish />
+          <StepTitle>
+            <span className="text-ui-main-500">
+              {`Authentication successful!`}
+            </span>
+          </StepTitle>
+        </div>
+      ) : (
+        <div className="flex justify-around w-full p-2 border-b">
+          <div className="flex">
+            <Step active>1</Step>
+            <StepTitle>{`Connect your crypto wallet`}</StepTitle>
+          </div>
+          <div className="flex">
+            <Step active>2</Step>
+            <StepTitle>{`Verify locked $RDNT`}</StepTitle>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
